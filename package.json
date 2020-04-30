@@ -4,7 +4,7 @@
   "description": "A very liberal implementation of the classic WereWolf game",
   "main": ".eslintrc.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "lint": "eslint . --fix --ext .ts --ext .tsx"
   },
   "repository": {
     "type": "git",
@@ -28,5 +28,10 @@
     "husky": "^4.2.5",
     "prettier": "^2.0.5",
     "typescript": "^3.8.3"
+  },
+  "husky": {
+    "hooks": {
+      "pre-push": "npm run lint"
+    }
   }
 }
