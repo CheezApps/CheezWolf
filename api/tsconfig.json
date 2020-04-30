@@ -16,6 +16,7 @@
     "incremental": true,
     "baseUrl": ".",
     "paths": {
+      "channel/*": ["./src/channel/*"],
       "models/*": ["./src/models/*"],
       "utils/*": ["./src/utils/*"],
       "controllers/*": ["./src/controllers/*"],
