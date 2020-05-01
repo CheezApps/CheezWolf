@@ -45,4 +45,8 @@ export default class Channel {
   public isReady(): boolean {
     return this.ready
   }
+
+  public getClients(): ChannelClients {
+    return this.clients
+  }
 }

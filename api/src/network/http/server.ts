@@ -3,7 +3,7 @@ import logger from 'morgan'
 import helmet from 'helmet'
 import bodyParser from 'body-parser'
 import cors from 'cors'
-import controllers from 'controllers/index'
+import controllers from './controllers'
 import http from 'http'
 
 export default class ApiServer extends Server {
@@ -49,7 +49,7 @@ export default class ApiServer extends Server {
   public async start(port: number): Promise<http.Server> {
     try {
       return this.app.listen(port, () => {
-        console.log('Starting server at port', port)
+        console.log('Serving http server at port', port)
       })
     } catch (error) {
       console.error('Could not start the api server', error)

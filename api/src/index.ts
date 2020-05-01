@@ -1,16 +1,19 @@
-import Server from './server'
+import HttpServer from 'network/http/server'
+import wsServer from 'network/ws/server'
 import dotenv from 'dotenv'
-import network from 'channel/network'
 
 dotenv.config()
 
-const server = new Server()
+const httpServer = new HttpServer()
 
-const envPort = process.env.API_PORT ? parseInt(process.env.API_PORT, 10) : false
-const port = envPort || 5000
+const envHttpPort = process.env.API_HTTP_PORT ? parseInt(process.env.API_HTTP_PORT, 10) : false
+const httpPort = envHttpPort || 5000
+
+const envWsPort = process.env.API_WS_PORT ? parseInt(process.env.API_WS_PORT, 10) : false
+const wsPort = envWsPort || 8080
 
 // start server
-server.start(port)
+httpServer.start(httpPort)
 
 // start the websocket server
-network.start('0.0.0.0', 8080)
+wsServer.start('0.0.0.0', wsPort)

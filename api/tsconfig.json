@@ -16,10 +16,10 @@
     "incremental": true,
     "baseUrl": ".",
     "paths": {
-      "channel/*": ["./src/channel/*"],
+      "network/*": ["./src/network/*"],
+      "game/*": ["./src/game/*"],
       "models/*": ["./src/models/*"],
       "utils/*": ["./src/utils/*"],
-      "controllers/*": ["./src/controllers/*"],
       "middlewares/*": ["./src/middlewares/*"],
       "config/*": ["./src/config/*"]
     }

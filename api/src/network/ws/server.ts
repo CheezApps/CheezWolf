@@ -1,11 +1,11 @@
-import Channel from './index'
+import Channel from './channel'
 import WebSocket from 'ws'
 
-type NetworkChannels = Record<string, Channel>
+type ServerChannels = Record<string, Channel>
 
-class Network {
-  private channels: NetworkChannels = {}
-  private nextChannelId = 'TEMPORARY, PLEASE CHANGE IT'
+class Server {
+  private channels: ServerChannels = {}
+  private nextChannelId = 'a' // 'TEMPORARY, PLEASE CHANGE IT'
 
   // websocket server
   private wss: WebSocket.Server | null = null
@@ -29,7 +29,7 @@ class Network {
 
     const newChannel = new Channel(channelId)
 
-    // add the new channel to the network record
+    // add the new channel to the server record
     this.channels[channelId] = newChannel
 
     return newChannel
@@ -45,12 +45,19 @@ class Network {
       port,
     })
 
+    console.info('Serving websocket server at port', port)
+
     // whenever a websocket client connects
     this.wss.on('connection', (websocketClient) => {
       // add a listener to assign it to a channel
       const listener = (data: WebSocket.Data): void => {
         // todo: modify so the data is an interface and not random object
-        const parsedData = JSON.parse(data.toString())
+        let parsedData = undefined
+        try {
+          parsedData = JSON.parse(data.toString())
+        } catch {
+          return
+        }
 
         if (!parsedData.x) {
           return
@@ -77,9 +84,9 @@ class Network {
   }
 }
 
-const network = new Network()
+const server = new Server()
 
 // make it non modifiable
-// Object.freeze(network)
+// Object.freeze(server)
 
-export default network
+export default server
