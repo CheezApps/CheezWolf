@@ -1,5 +1,6 @@
 import Channel from './channel'
 import WebSocket from 'ws'
+import { parseClientData, ServerData } from 'network/ws/channel/data'
 
 type ServerChannels = Record<string, Channel>
 
@@ -52,23 +53,26 @@ class Server {
       // add a listener to assign it to a channel
       const listener = (data: WebSocket.Data): void => {
         // todo: modify so the data is an interface and not random object
-        let parsedData = undefined
-        try {
-          parsedData = JSON.parse(data.toString())
-        } catch {
+        const parsedData = parseClientData(data)
+
+        if (!parsedData || parsedData.type !== 'connection' || !parsedData.value) {
           return
         }
 
-        if (!parsedData.x) {
-          return
-        }
-
-        const targetChannel = this.channels[parsedData.x]
+        const targetChannel = this.channels[parsedData.value]
 
         // check if target channel exists
         if (!targetChannel) {
           // todo: send legit json object message
-          websocketClient.send('Target channel does not exist')
+          const connectionErrorData: ServerData = {
+            id: parsedData.id,
+            type: 'connection_error',
+            value: {
+              message: 'The channel does not exist',
+            },
+          }
+
+          websocketClient.send(JSON.stringify(connectionErrorData))
           return
         }
 
@@ -76,7 +80,7 @@ class Server {
         websocketClient.off('message', listener)
 
         // add new client to the target channel
-        targetChannel.addClient(websocketClient)
+        targetChannel.addClient(websocketClient, parsedData.id)
       }
 
       websocketClient.on('message', listener)

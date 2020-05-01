@@ -1,4 +1,5 @@
 import WebSocket from 'ws'
+import { ServerData } from './data'
 
 export default class Client {
   private id: number
@@ -17,6 +18,10 @@ export default class Client {
     }
 
     websocketClient.on('close', removeClient)
+  }
+
+  public sendData(data: ServerData): void {
+    this.websocketClient?.send(JSON.stringify(data))
   }
 
   public setWebsocketClient(websocketClient?: WebSocket): void {
