@@ -6,7 +6,7 @@ import cors from 'cors'
 import controllers from './controllers'
 import http from 'http'
 
-export default class ApiServer extends Server {
+class HttpServer extends Server {
   constructor() {
     super(process.env.NODE_ENV === 'development')
 
@@ -58,3 +58,7 @@ export default class ApiServer extends Server {
     }
   }
 }
+
+const httpServer = new HttpServer()
+
+export default httpServer

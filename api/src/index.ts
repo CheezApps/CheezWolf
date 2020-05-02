@@ -1,10 +1,8 @@
-import HttpServer from 'network/http/server'
+import httpServer from 'network/http/server'
 import wsServer from 'network/ws/server'
 import dotenv from 'dotenv'
 
 dotenv.config()
-
-const httpServer = new HttpServer()
 
 const envHttpPort = process.env.API_HTTP_PORT ? parseInt(process.env.API_HTTP_PORT, 10) : false
 const httpPort = envHttpPort || 5000
