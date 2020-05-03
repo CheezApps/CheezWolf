@@ -29,13 +29,13 @@ export default class Channel {
    */
   public addClient(websocketClient: WebSocket, messageId: number): void {
     // generate new id for client
-    const clientId = ++this.nextClientId
+    const clientId = this.nextClientId++
 
     const newClient = new Client(clientId, websocketClient)
 
     // broadcast channel the addition of a new client
     this.broadcast({
-      type: 'client_joined_channel',
+      type: 'user_joined_channel',
       value: 'THE NEW CLIENT INFO', // todo: send client info
     })
 
@@ -45,7 +45,7 @@ export default class Channel {
     // send message to client that he is connected
     newClient.sendData({
       id: messageId,
-      type: 'connection',
+      type: 'channel_connection',
       value: 'connected to the channel with success',
     })
   }
