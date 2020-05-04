@@ -55,7 +55,7 @@ class Server {
         // todo: modify so the data is an interface and not random object
         const parsedData = parseClientData(data)
 
-        if (!parsedData || parsedData.type !== 'connection' || !parsedData.value) {
+        if (!parsedData || parsedData.type !== 'channel_connection' || !parsedData.value) {
           return
         }
 
@@ -66,7 +66,7 @@ class Server {
           // todo: send legit json object message
           const connectionErrorData: ServerData = {
             id: parsedData.id,
-            type: 'connection_error',
+            type: 'channel_connection_error',
             value: {
               message: 'The channel does not exist',
             },

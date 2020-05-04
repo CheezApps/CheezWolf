@@ -8,6 +8,7 @@ const clientListOfMessageType = [
 const serverListOfMessageType = [
   // message types coming from the server
   ...clientListOfMessageType,
+  'channel_connection_error',
   'user_joined_channel',
 ] as const
 
