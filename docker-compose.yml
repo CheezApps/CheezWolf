@@ -1,0 +1,31 @@
+version: "3"
+services:
+  api:
+    build: ./api
+    volumes:
+      - ./api:/home/node/api
+      - /home/node/api/node_modules
+    # depends_on:
+    #   - db
+    ports:
+      - ${API_HTTP_PORT}:${API_HTTP_PORT}
+      - ${API_WS_PORT}:${API_WS_PORT}
+    env_file:
+      - .env
+    environment:
+      - NODE_ENV=development
+    command: bash -c "npm install && npm start"
+  app:
+    build: ./app
+    volumes:
+      - ./app:/home/node/app
+      - /home/node/app/node_modules
+    depends_on:
+      - api
+    ports:
+      - ${APP_PORT}:${APP_PORT}
+    env_file:
+      - .env
+    environment:
+      - NODE_ENV=development
+    command: bash -c "npm install && npm start"

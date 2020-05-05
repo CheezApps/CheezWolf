@@ -15,23 +15,23 @@ const serverListOfMessageType = [
 export type ClientMessageType = typeof clientListOfMessageType[number]
 export type ServerMessageType = typeof serverListOfMessageType[number]
 
-export interface ClientData {
+export interface ClientData<T = any> {
   /**
    * The message id
    */
   id: number
   type: ClientMessageType
-  value: any
+  value: T
 }
 
-export interface ServerData {
+export interface ServerData<T = any> {
   /**
    * Return id in response to a message received from ClientData
    * Example: If the user sends message with id 1, the server answers with id 1
    */
   id?: number
   type: ServerMessageType
-  value: any
+  value: T
 }
 
 const parseClientData = (data: WebSocket.Data): ClientData | false => {
