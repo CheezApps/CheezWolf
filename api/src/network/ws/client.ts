@@ -1,5 +1,6 @@
 import WebSocket from 'ws'
 import { ClientData, ServerData, ClientMessageType, parseClientData } from './data'
+import server from './server'
 
 export type ClientListener = (data: ClientData) => void
 export type ClientListeners = Record<number, ClientListener>
@@ -9,12 +10,14 @@ type ListenerTypeIdLinks = Partial<Record<ClientMessageType, number[]>>
 export default class Client {
   private id: number
   private websocketClient?: WebSocket
+  private channelId: string
   private nextListenerId = 0
   private listenerTypeIdLinks: ListenerTypeIdLinks = {}
   private listeners: ClientListeners = {}
 
-  constructor(id: number, websocketClient: WebSocket) {
+  constructor(id: number, channelId: string, websocketClient: WebSocket) {
     this.id = id
+    this.channelId = channelId
     this.websocketClient = websocketClient
     this.setupListeners()
   }
@@ -32,6 +35,13 @@ export default class Client {
     // auto-destroy when user breaks connection
     const removeClient = (): void => {
       console.log(`${this.id} died in terrible way`)
+
+      // delete from channel
+      const channel = server.getChannel(this.channelId)
+      channel.removeClient(this.id)
+
+      // delete from server
+      server.deleteClient(this.id)
 
       this.websocketClient?.off('close', removeClient)
       this.websocketClient?.off('message', sendToListeners)
@@ -55,6 +65,10 @@ export default class Client {
     })
   }
 
+  /**
+   * Sends data to client
+   * @param data ServerData to be sent to the client
+   */
   public sendData(data: ServerData): void {
     this.websocketClient?.send(JSON.stringify(data))
   }
@@ -80,6 +94,10 @@ export default class Client {
     return listenerId
   }
 
+  /**
+   * Remove a websocket data listener
+   * @param listenerId The id of the listener to remove
+   */
   public removeListener(listenerId: number): void {
     // remove listener
     delete this.listeners[listenerId]
@@ -105,7 +123,13 @@ export default class Client {
     this.websocketClient = websocketClient
   }
 
+  // GETTERS
+
   public getId(): number {
     return this.id
+  }
+
+  public getChannelId(): string {
+    return this.channelId
   }
 }

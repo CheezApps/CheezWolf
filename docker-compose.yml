@@ -2,6 +2,7 @@ version: "3"
 services:
   api:
     build: ./api
+    tty: true
     volumes:
       - ./api:/home/node/api
       - /home/node/api/node_modules

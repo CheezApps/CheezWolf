@@ -34,6 +34,11 @@ export interface ServerData<T = any> {
   value: T
 }
 
+/**
+ * Parses the incoming websocket data as ClientData,
+ * returns false if data is invalid
+ * @param data Websocket data to be parsed
+ */
 const parseClientData = (data: WebSocket.Data): ClientData | false => {
   try {
     const parsedData: ClientData = JSON.parse(data.toString())

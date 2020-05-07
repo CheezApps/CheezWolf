@@ -1,12 +1,16 @@
-import Channel from './channel'
 import WebSocket from 'ws'
-import { parseClientData, ServerData } from 'network/ws/channel/data'
+import Channel from './channel'
+import { parseClientData, ServerData } from './data'
+import Client from './client'
 
 type ServerChannels = Record<string, Channel>
+type ServerClients = Record<number, Client>
 
 class Server {
   private channels: ServerChannels = {}
-  private nextChannelId = 'a' // 'TEMPORARY, PLEASE CHANGE IT'
+  private clients: ServerClients = {}
+  private nextChannelId = 'a' // todo: TEMPORARY, PLEASE CHANGE IT
+  private nextClientId = 0
 
   // websocket server
   private wss: WebSocket.Server | null = null
@@ -15,6 +19,7 @@ class Server {
    * Generates a channel id with no collision
    */
   private generateChannelId(): string {
+    // todo: make better id generator
     const channelId = this.nextChannelId
 
     this.nextChannelId = channelId + 'x'
@@ -23,7 +28,14 @@ class Server {
   }
 
   /**
-   *
+   * Generates a client id with no collision
+   */
+  private generateClientId(): number {
+    return this.nextClientId++
+  }
+
+  /**
+   * Creates a new channel
    */
   public createChannel(): Channel {
     const channelId = this.generateChannelId()
@@ -36,6 +48,27 @@ class Server {
     return newChannel
   }
 
+  /**
+   * Removes a channel from the server
+   * @param channelId The id of the channel to be deleted
+   */
+  public deleteChannel(channelId: string): void {
+    delete this.channels[channelId]
+  }
+
+  /**
+   * Deletes a client from the server
+   * @param clientId The id of the client to be deleted
+   */
+  public deleteClient(clientId: number): void {
+    delete this.clients[clientId]
+  }
+
+  /**
+   * Starts the websocket server
+   * @param host Host for the server
+   * @param port Port for the server
+   */
   public start(host: string, port: number): void {
     if (this.wss) {
       throw new Error('A server has already been started')
@@ -59,7 +92,8 @@ class Server {
           return
         }
 
-        const targetChannel = this.channels[parsedData.value]
+        const targetChannelId = parsedData.value
+        const targetChannel = this.channels[targetChannelId]
 
         // check if target channel exists
         if (!targetChannel) {
@@ -79,12 +113,37 @@ class Server {
         // remove current listener (so we stop creating clients)
         websocketClient.off('message', listener)
 
+        // create new client
+        const newClientId = this.generateClientId()
+        const newClient = new Client(newClientId, targetChannelId, websocketClient)
+
         // add new client to the target channel
-        targetChannel.addClient(websocketClient, parsedData.id)
+        targetChannel.addClient(newClient, parsedData.id)
+
+        // add client to server record
+        this.clients[newClientId] = newClient
       }
 
       websocketClient.on('message', listener)
     })
+  }
+
+  // GETTERS
+
+  /**
+   * Retrieves a client with its id
+   * @param clientId The id of the client
+   */
+  public getClient(clientId: number): Client {
+    return this.clients[clientId]
+  }
+
+  /**
+   * Retrieves a channel with its id
+   * @param channelId The id of the channel
+   */
+  public getChannel(channelId: string): Channel {
+    return this.channels[channelId]
   }
 }
 
