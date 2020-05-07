@@ -24,6 +24,7 @@ services:
       - api
     ports:
       - ${APP_PORT}:${APP_PORT}
+      - 34526:34526
     env_file:
       - .env
     environment:

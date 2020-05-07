@@ -4,8 +4,8 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "start": "parcel ./src/index.html",
-    "build": "parcel build ./src/index.html"
+    "start": "parcel ./src/index.html --host 0.0.0.0 --port ${APP_PORT:-3000} --hmr-port 34526",
+    "build": "parcel build ./src/index.html --experimental-scope-hoisting"
   },
   "keywords": [],
   "author": "",
