@@ -1,11 +1,18 @@
 import WebSocket from 'ws'
-import { ClientData, ServerData, ClientMessageType, parseClientData } from './data'
+import { ClientMessageType, ClientData, ServerData } from 'shared/data'
+import { parseClientData } from './data'
 import server from './server'
+import Channel from './channel'
 
-export type ClientListener = (data: ClientData) => void
+interface ClientInfo {
+  client: Client
+  channel: Channel
+}
+
+export type ClientListener = (data: ClientData, clientInfo: ClientInfo) => void
 export type ClientListeners = Record<number, ClientListener>
 
-type ListenerTypeIdLinks = Partial<Record<ClientMessageType, number[]>>
+type ListenerTypeIdLinks = Partial<Record<ClientMessageType, Set<number>>>
 
 export default class Client {
   private id: number
@@ -57,11 +64,14 @@ export default class Client {
 
     // get listener ids with the message type
     // if none exist, give empty array
-    const listenerIds = this.listenerTypeIdLinks[messageType] || []
+    const listenerIds = this.listenerTypeIdLinks[messageType]
 
     // send the data to the listeners
-    listenerIds.forEach((listenerId) => {
-      this.listeners[listenerId](data)
+    listenerIds?.forEach((listenerId) => {
+      this.listeners[listenerId](data, {
+        client: this,
+        channel: server.getChannel(this.channelId),
+      })
     })
   }
 
@@ -82,11 +92,13 @@ export default class Client {
   public addListener(messageType: ClientMessageType, listener: ClientListener): number {
     const listenerId = this.nextListenerId++
 
-    const messageTypeListeners = this.listenerTypeIdLinks[messageType]
+    // create a new set if the message type is not present
+    if (!this.listenerTypeIdLinks[messageType]) {
+      this.listenerTypeIdLinks[messageType] = new Set()
+    }
 
     // assign a new link between messageType and listenerId
-    // if messageType exists already, push new listenerId else create new array
-    this.listenerTypeIdLinks[messageType] = messageTypeListeners ? [...messageTypeListeners, listenerId] : [listenerId]
+    this.listenerTypeIdLinks[messageType]?.add(listenerId)
 
     // add listener to the record
     this.listeners[listenerId] = listener
@@ -104,18 +116,7 @@ export default class Client {
 
     // remove link from record
     Object.keys(this.listenerTypeIdLinks).some((messageType) => {
-      const listenerIdIndex = this.listenerTypeIdLinks[messageType as ClientMessageType]?.indexOf(listenerId) || -1
-
-      // if the id was not found, go to next messageType
-      if (listenerIdIndex === -1) {
-        return false
-      }
-
-      // remove the listener id from the record
-      this.listenerTypeIdLinks[messageType as ClientMessageType]?.splice(listenerIdIndex, 1)
-
-      // end the loop
-      return true
+      return this.listenerTypeIdLinks[messageType as ClientMessageType]?.delete(listenerId)
     })
   }
 

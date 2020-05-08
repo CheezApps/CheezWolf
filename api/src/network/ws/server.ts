@@ -1,6 +1,7 @@
 import WebSocket from 'ws'
 import Channel from './channel'
-import { parseClientData, ServerData } from './data'
+import { parseClientData } from './data'
+import { ServerData } from 'shared/data'
 import Client from './client'
 
 type ServerChannels = Record<string, Channel>
@@ -62,6 +63,17 @@ class Server {
    */
   public deleteClient(clientId: number): void {
     delete this.clients[clientId]
+  }
+
+  /**
+   * Sends data to a list of clients
+   * @param clientIds The ids of the clients to send data
+   * @param data The data to be sent to clients
+   */
+  public sendDataToClients(clientIds: number[], data: ServerData): void {
+    clientIds.forEach((clientId) => {
+      this.clients[clientId]?.sendData(data)
+    })
   }
 
   /**

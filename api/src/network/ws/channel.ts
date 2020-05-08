@@ -1,6 +1,15 @@
+import { ServerData } from 'shared/data'
 import Client from './client'
-import { ServerData } from './data'
 import server from './server'
+
+const CHANNEL_EVENTS = [
+  // list of all channel events
+  'client_added',
+  'client_removed',
+] as const
+type ChannelEvent = typeof CHANNEL_EVENTS[number]
+
+type ClientListener = (client: Client) => void
 
 export default class Channel {
   /**
@@ -9,10 +18,26 @@ export default class Channel {
   private id: string
   private ready = false
   private clientIds: Set<number>
+  private nextListenerId = 0
+  private listenerEventIds: Partial<Record<ChannelEvent, Set<number>>> = {}
+  private listeners: Record<number, Function> = {}
 
   constructor(id: string) {
     this.id = id
     this.clientIds = new Set()
+  }
+
+  private addListener(event: ChannelEvent, listener: Function): number {
+    const listenerId = this.nextListenerId++
+
+    this.listeners[listenerId] = listener
+    if (!this.listenerEventIds[event]) {
+      this.listenerEventIds[event] = new Set()
+    }
+
+    this.listenerEventIds[event]?.add(listenerId)
+
+    return listenerId
   }
 
   /**
@@ -28,6 +53,11 @@ export default class Channel {
   public addClient(client: Client, messageId: number): void {
     // generate new id for client
     const clientId = client.getId()
+
+    // trigger listeners
+    this.listenerEventIds['client_added']?.forEach((listenerId) => {
+      this.listeners[listenerId](client)
+    })
 
     // broadcast channel the addition of a new client
     this.broadcast({
@@ -54,10 +84,23 @@ export default class Channel {
   public removeClient(clientId: number): void {
     this.clientIds.delete(clientId)
 
+    // trigger listeners
+    this.listenerEventIds['client_removed']?.forEach((listenerId) => {
+      this.listeners[listenerId]()
+    })
+
     // if there are no more clients, delete the channel
     if (this.clientIds.entries.length === 0) {
       server.deleteChannel(this.id)
     }
+  }
+
+  public onClientAdded(listener: ClientListener): number {
+    return this.addListener('client_added', listener)
+  }
+
+  public onClientRemoved(listener: () => void): number {
+    return this.addListener('client_removed', listener)
   }
 
   /**
@@ -65,15 +108,8 @@ export default class Channel {
    * @param data Data to be sent to all channel's clients
    */
   public broadcast(data: ServerData): void {
-    // get the channel's clients from the server
-    const clients = Array.from(this.clientIds).map((clientId) => {
-      return server.getClient(clientId)
-    })
-
     // broadcast data
-    clients.forEach((client) => {
-      client.sendData(data)
-    })
+    server.sendDataToClients(Array.from(this.clientIds), data)
   }
 
   // GETTERS

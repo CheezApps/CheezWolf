@@ -17,10 +17,8 @@
     "paths": {
       "network/*": ["./src/network/*"],
       "game/*": ["./src/game/*"],
-      "models/*": ["./src/models/*"],
       "utils/*": ["./src/utils/*"],
-      "middlewares/*": ["./src/middlewares/*"],
-      "config/*": ["./src/config/*"]
+      "shared/*": ["../shared/*"]
     }
   },
   "include": [
