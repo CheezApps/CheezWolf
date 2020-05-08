@@ -5,6 +5,7 @@ services:
     tty: true
     volumes:
       - ./api:/home/node/api
+      - ./shared:/home/node/shared
       - /home/node/api/node_modules
     # depends_on:
     #   - db
@@ -20,6 +21,7 @@ services:
     build: ./app
     volumes:
       - ./app:/home/node/app
+      - ./shared:/home/node/shared
       - /home/node/app/node_modules
     depends_on:
       - api
