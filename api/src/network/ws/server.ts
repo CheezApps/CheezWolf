@@ -3,6 +3,7 @@ import Channel from './channel'
 import { parseClientData } from './data'
 import { ServerData } from 'shared/data'
 import Client from './client'
+import IdGenerator from 'utils/idGenerator'
 
 type ServerChannels = Record<string, Channel>
 type ServerClients = Record<number, Client>
@@ -10,22 +11,14 @@ type ServerClients = Record<number, Client>
 class Server {
   private channels: ServerChannels = {}
   private clients: ServerClients = {}
-  private nextChannelId = 'a' // todo: TEMPORARY, PLEASE CHANGE IT
+  private channelIdGenerator: IdGenerator
   private nextClientId = 0
 
   // websocket server
   private wss: WebSocket.Server | null = null
 
-  /**
-   * Generates a channel id with no collision
-   */
-  private generateChannelId(): string {
-    // todo: make better id generator
-    const channelId = this.nextChannelId
-
-    this.nextChannelId = channelId + 'x'
-
-    return channelId
+  constructor() {
+    this.channelIdGenerator = new IdGenerator(4)
   }
 
   /**
@@ -39,7 +32,7 @@ class Server {
    * Creates a new channel
    */
   public createChannel(): Channel {
-    const channelId = this.generateChannelId()
+    const channelId = this.channelIdGenerator.generate()
 
     const newChannel = new Channel(channelId)
 
@@ -55,6 +48,9 @@ class Server {
    */
   public deleteChannel(channelId: string): void {
     delete this.channels[channelId]
+
+    // liberate its id
+    this.channelIdGenerator.liberate(channelId)
   }
 
   /**
