@@ -18,35 +18,24 @@ export default class Channel {
    * The channel id
    */
   private id: string
-  private ready = false
   private clients: Set<Client>
-  private nextListenerId = 0
-  private listenerEventIds: Partial<Record<ChannelEvent, Set<number>>> = {}
-  private listeners: Record<number, Function> = {}
+  private listeners: Map<ChannelEvent, Set<Function>>
 
   constructor(id: string) {
     this.id = id
     this.clients = new Set()
+    this.listeners = new Map()
   }
 
-  private addListener(event: ChannelEvent, listener: Function): number {
-    const listenerId = this.nextListenerId++
+  private addListener(event: ChannelEvent, listener: Function): void {
+    const eventListeners = this.listeners.get(event)
 
-    this.listeners[listenerId] = listener
-    if (!this.listenerEventIds[event]) {
-      this.listenerEventIds[event] = new Set()
+    if (!eventListeners) {
+      this.listeners.set(event, new Set())
     }
 
-    this.listenerEventIds[event]?.add(listenerId)
-
-    return listenerId
-  }
-
-  /**
-   * Mark the channel as ready
-   */
-  public up(): void {
-    this.ready = true
+    // add listener
+    this.listeners.get(event)?.add(listener)
   }
 
   /**
@@ -54,8 +43,8 @@ export default class Channel {
    */
   public addClient(client: Client, messageId: number): void {
     // trigger listeners
-    this.listenerEventIds['client_added']?.forEach((listenerId) => {
-      this.listeners[listenerId](client)
+    this.listeners.get('client_added')?.forEach((listener) => {
+      listener(client)
     })
 
     // broadcast channel the addition of a new client
@@ -84,8 +73,8 @@ export default class Channel {
     this.clients.delete(client)
 
     // trigger listeners
-    this.listenerEventIds['client_removed']?.forEach((listenerId) => {
-      this.listeners[listenerId](client)
+    this.listeners.get('client_removed')?.forEach((listener) => {
+      listener(client)
     })
 
     // if there are no more clients, delete the channel
@@ -94,16 +83,16 @@ export default class Channel {
     }
   }
 
-  public onClientAdded(listener: AddClientListener): number {
-    return this.addListener('client_added', listener)
+  public onClientAdded(listener: AddClientListener): void {
+    this.addListener('client_added', listener)
   }
 
-  public onClientRemoved(listener: RemoveClientListener): number {
-    return this.addListener('client_removed', listener)
+  public onClientRemoved(listener: RemoveClientListener): void {
+    this.addListener('client_removed', listener)
   }
 
-  public onChannelDeletion(listener: () => void): number {
-    return this.addListener('channel_deleted', listener)
+  public onChannelDeletion(listener: () => void): void {
+    this.addListener('channel_deleted', listener)
   }
 
   /**
@@ -121,10 +110,6 @@ export default class Channel {
 
   public getId(): string | null {
     return this.id
-  }
-
-  public isReady(): boolean {
-    return this.ready
   }
 
   public getClients(): Set<Client> {
