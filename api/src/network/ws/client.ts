@@ -4,7 +4,7 @@ import { parseClientData } from './data'
 import server from './server'
 import Channel from './channel'
 
-export type ClientListener = (data: ClientData, client: Client) => void
+export type ClientListener<T = any> = (data: ClientData<T>, client: Client) => void
 export type ClientListeners = Map<ClientMessageType, Set<ClientListener>>
 
 export default class Client {
@@ -69,12 +69,9 @@ export default class Client {
    * @param messageType the type of message to listen to
    * @param listener callback with the message
    */
-  public addListener(messageType: ClientMessageType, listener: ClientListener): void {
-    // retrieve listeners associated with the message type
-    const messageTypeListeners = this.listeners.get(messageType)
-
+  public addListener<T = any>(messageType: ClientMessageType, listener: ClientListener<T>): void {
     // create a new set if there is no listeners
-    if (!messageTypeListeners) {
+    if (!this.listeners.has(messageType)) {
       this.listeners.set(messageType, new Set())
     }
 

@@ -1,6 +1,7 @@
 export const CLIENT_MESSAGE_TYPES = [
   // message types coming from the client
   'channel_connection',
+  'chat_message',
 ] as const
 
 export const SERVER_MESSAGE_TYPES = [
@@ -9,6 +10,8 @@ export const SERVER_MESSAGE_TYPES = [
   'channel_connection_error',
   'user_joined_channel',
   'game_state',
+  'chat_message_success',
+  'chat_message_error',
 ] as const
 
 export type ClientMessageType = typeof CLIENT_MESSAGE_TYPES[number]
@@ -31,4 +34,9 @@ export interface ServerData<T = any> {
   id?: number
   type: ServerMessageType
   value: T
+}
+
+export interface LobbyChatDataValue {
+  to: string
+  message: string
 }

@@ -28,9 +28,7 @@ export default class Channel {
   }
 
   private addListener(event: ChannelEvent, listener: Function): void {
-    const eventListeners = this.listeners.get(event)
-
-    if (!eventListeners) {
+    if (!this.listeners.has(event)) {
       this.listeners.set(event, new Set())
     }
 
