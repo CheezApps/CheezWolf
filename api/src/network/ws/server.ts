@@ -6,11 +6,12 @@ import Client from './client'
 import IdGenerator from 'utils/idGenerator'
 
 type ServerChannels = Record<string, Channel>
-type ServerClients = Record<number, Client>
+// type ServerClients = Record<number, Client>
+type ServerClients = Map<number, Client>
 
 class Server {
   private channels: ServerChannels = {}
-  private clients: ServerClients = {}
+  private clients: ServerClients
   private channelIdGenerator: IdGenerator
   private nextClientId = 0
 
@@ -18,6 +19,7 @@ class Server {
   private wss: WebSocket.Server | null = null
 
   constructor() {
+    this.clients = new Map()
     this.channelIdGenerator = new IdGenerator(4)
   }
 
@@ -58,7 +60,7 @@ class Server {
    * @param clientId The id of the client to be deleted
    */
   public deleteClient(clientId: number): void {
-    delete this.clients[clientId]
+    this.clients.delete(clientId)
   }
 
   /**
@@ -68,7 +70,7 @@ class Server {
    */
   public sendDataToClients(clientIds: number[], data: ServerData): void {
     clientIds.forEach((clientId) => {
-      this.clients[clientId]?.sendData(data)
+      this.clients.get(clientId)?.sendData(data)
     })
   }
 
@@ -129,7 +131,7 @@ class Server {
         targetChannel.addClient(newClient, parsedData.id)
 
         // add client to server record
-        this.clients[newClientId] = newClient
+        this.clients.set(newClientId, newClient)
       }
 
       websocketClient.on('message', listener)
@@ -142,8 +144,8 @@ class Server {
    * Retrieves a client with its id
    * @param clientId The id of the client
    */
-  public getClient(clientId: number): Client {
-    return this.clients[clientId]
+  public getClient(clientId: number): Client | undefined {
+    return this.clients.get(clientId)
   }
 
   /**

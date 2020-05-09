@@ -8,6 +8,7 @@ export const SERVER_MESSAGE_TYPES = [
   ...CLIENT_MESSAGE_TYPES,
   'channel_connection_error',
   'user_joined_channel',
+  'game_state',
 ] as const
 
 export type ClientMessageType = typeof CLIENT_MESSAGE_TYPES[number]
