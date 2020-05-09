@@ -4,12 +4,7 @@ import { parseClientData } from './data'
 import server from './server'
 import Channel from './channel'
 
-interface ClientInfo {
-  client: Client
-  channel: Channel
-}
-
-export type ClientListener = (data: ClientData, clientInfo: ClientInfo) => void
+export type ClientListener = (data: ClientData, client: Client) => void
 export type ClientListeners = Record<number, ClientListener>
 
 type ListenerTypeIdLinks = Partial<Record<ClientMessageType, Set<number>>>
@@ -17,14 +12,14 @@ type ListenerTypeIdLinks = Partial<Record<ClientMessageType, Set<number>>>
 export default class Client {
   private id: number
   private websocketClient?: WebSocket
-  private channelId: string
+  private channel: Channel
   private nextListenerId = 0
   private listenerTypeIdLinks: ListenerTypeIdLinks = {}
   private listeners: ClientListeners = {}
 
-  constructor(id: number, channelId: string, websocketClient: WebSocket) {
+  constructor(id: number, channel: Channel, websocketClient: WebSocket) {
     this.id = id
-    this.channelId = channelId
+    this.channel = channel
     this.websocketClient = websocketClient
     this.setupListeners()
   }
@@ -44,8 +39,7 @@ export default class Client {
       console.log(`${this.id} died in terrible way`)
 
       // delete from channel
-      const channel = server.getChannel(this.channelId)
-      channel.removeClient(this.id)
+      this.channel.removeClient(this)
 
       // delete from server
       server.deleteClient(this.id)
@@ -68,10 +62,7 @@ export default class Client {
 
     // send the data to the listeners
     listenerIds?.forEach((listenerId) => {
-      this.listeners[listenerId](data, {
-        client: this,
-        channel: server.getChannel(this.channelId),
-      })
+      this.listeners[listenerId](data, this)
     })
   }
 
@@ -130,7 +121,7 @@ export default class Client {
     return this.id
   }
 
-  public getChannelId(): string {
-    return this.channelId
+  public getChannel(): Channel {
+    return this.channel
   }
 }

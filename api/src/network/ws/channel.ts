@@ -11,7 +11,7 @@ const CHANNEL_EVENTS = [
 type ChannelEvent = typeof CHANNEL_EVENTS[number]
 
 type AddClientListener = (client: Client) => void
-type RemoveClientListener = (clientId: number) => void
+type RemoveClientListener = (client: Client) => void
 
 export default class Channel {
   /**
@@ -19,14 +19,14 @@ export default class Channel {
    */
   private id: string
   private ready = false
-  private clientIds: Set<number>
+  private clients: Set<Client>
   private nextListenerId = 0
   private listenerEventIds: Partial<Record<ChannelEvent, Set<number>>> = {}
   private listeners: Record<number, Function> = {}
 
   constructor(id: string) {
     this.id = id
-    this.clientIds = new Set()
+    this.clients = new Set()
   }
 
   private addListener(event: ChannelEvent, listener: Function): number {
@@ -53,9 +53,6 @@ export default class Channel {
    * Adds a new client to the channel
    */
   public addClient(client: Client, messageId: number): void {
-    // generate new id for client
-    const clientId = client.getId()
-
     // trigger listeners
     this.listenerEventIds['client_added']?.forEach((listenerId) => {
       this.listeners[listenerId](client)
@@ -67,8 +64,8 @@ export default class Channel {
       value: 'THE NEW CLIENT INFO', // todo: send client info
     })
 
-    // add the new clientId to the record
-    this.clientIds.add(clientId)
+    // add the new client to the record
+    this.clients.add(client)
 
     // send message to client that he is connected
     client.sendData({
@@ -81,18 +78,18 @@ export default class Channel {
   /**
    * Removes a client from the channel
    * and auto-destroys the channel if there is no more clients
-   * @param clientId The id of the client to remove from the channel
+   * @param client The client to remove from the channel
    */
-  public removeClient(clientId: number): void {
-    this.clientIds.delete(clientId)
+  public removeClient(client: Client): void {
+    this.clients.delete(client)
 
     // trigger listeners
     this.listenerEventIds['client_removed']?.forEach((listenerId) => {
-      this.listeners[listenerId](clientId)
+      this.listeners[listenerId](client)
     })
 
     // if there are no more clients, delete the channel
-    if (this.clientIds.size === 0) {
+    if (this.clients.size === 0) {
       server.deleteChannel(this.id)
     }
   }
@@ -115,7 +112,9 @@ export default class Channel {
    */
   public broadcast(data: ServerData): void {
     // broadcast data
-    server.sendDataToClients(Array.from(this.clientIds), data)
+    this.clients.forEach((client) => {
+      client.sendData(data)
+    })
   }
 
   // GETTERS
@@ -128,23 +127,7 @@ export default class Channel {
     return this.ready
   }
 
-  public getClientIds(): Set<number> {
-    return this.clientIds
-  }
-
-  public getClients(): Client[] {
-    const clients: Client[] = []
-    this.clientIds.forEach((clientId) => {
-      const possibleClient = server.getClient(clientId)
-
-      // clear out the ghost clients
-      if (possibleClient) {
-        clients.push(possibleClient)
-      } else {
-        this.removeClient(clientId)
-      }
-    })
-
-    return clients
+  public getClients(): Set<Client> {
+    return this.clients
   }
 }

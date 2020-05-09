@@ -5,12 +5,11 @@ import { ServerData } from 'shared/data'
 import Client from './client'
 import IdGenerator from 'utils/idGenerator'
 
-type ServerChannels = Record<string, Channel>
-// type ServerClients = Record<number, Client>
+type ServerChannels = Map<string, Channel>
 type ServerClients = Map<number, Client>
 
 class Server {
-  private channels: ServerChannels = {}
+  private channels: ServerChannels
   private clients: ServerClients
   private channelIdGenerator: IdGenerator
   private nextClientId = 0
@@ -20,6 +19,7 @@ class Server {
 
   constructor() {
     this.clients = new Map()
+    this.channels = new Map()
     this.channelIdGenerator = new IdGenerator(4)
   }
 
@@ -39,7 +39,7 @@ class Server {
     const newChannel = new Channel(channelId)
 
     // add the new channel to the server record
-    this.channels[channelId] = newChannel
+    this.channels.set(channelId, newChannel)
 
     return newChannel
   }
@@ -49,7 +49,7 @@ class Server {
    * @param channelId The id of the channel to be deleted
    */
   public deleteChannel(channelId: string): void {
-    delete this.channels[channelId]
+    this.channels.delete(channelId)
 
     // liberate its id
     this.channelIdGenerator.liberate(channelId)
@@ -102,8 +102,8 @@ class Server {
           return
         }
 
-        const targetChannelId = parsedData.value
-        const targetChannel = this.channels[targetChannelId]
+        const targetChannelId: string = parsedData.value
+        const targetChannel = this.channels.get(targetChannelId)
 
         // check if target channel exists
         if (!targetChannel) {
@@ -125,7 +125,7 @@ class Server {
 
         // create new client
         const newClientId = this.generateClientId()
-        const newClient = new Client(newClientId, targetChannelId, websocketClient)
+        const newClient = new Client(newClientId, targetChannel, websocketClient)
 
         // add new client to the target channel
         targetChannel.addClient(newClient, parsedData.id)
@@ -152,8 +152,8 @@ class Server {
    * Retrieves a channel with its id
    * @param channelId The id of the channel
    */
-  public getChannel(channelId: string): Channel {
-    return this.channels[channelId]
+  public getChannel(channelId: string): Channel | undefined {
+    return this.channels.get(channelId)
   }
 }
 
